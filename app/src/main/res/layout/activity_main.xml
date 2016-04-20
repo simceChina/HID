@@ -20,17 +20,46 @@
             android:layout_height="wrap_content"
             android:minHeight="36dip"
             android:minWidth="50dip"
-            android:text="TEST"
+            android:text="Send"
             android:textAppearance="?android:attr/textAppearanceSmallInverse" />
 
-       <!-- <Button
+        <Button
             android:id="@+id/btnClear"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="top|left"
             android:minHeight="36dip"
-            android:text="@string/clear"
-            android:textAppearance="?android:attr/textAppearanceSmallInverse" />-->
+            android:text="Connect"
+            android:textAppearance="?android:attr/textAppearanceSmallInverse" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="left"
+        android:gravity="top"
+        android:orientation="vertical" >
+
+        <TextView
+            android:id="@+id/vendorIdText"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:text="vendorId : "
+            android:textColor="@android:color/black"
+            android:textSize="18sp"
+            android:textAppearance="?android:attr/textAppearanceSmallInverse"
+            android:gravity="left" />
+
+        <TextView
+            android:id="@+id/productIdText"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:text="productId : "
+            android:textSize="18sp"
+            android:textColor="@android:color/black"
+            android:textAppearance="?android:attr/textAppearanceSmallInverse"
+            android:gravity="left" />
+
     </LinearLayout>
 
     <!--<RadioGroup

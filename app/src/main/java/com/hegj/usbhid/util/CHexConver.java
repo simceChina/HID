@@ -3,7 +3,7 @@ package com.hegj.usbhid.util;
 import java.util.Locale;
 
 /**
- * 16½øÖÆÖµÓëString/ByteÖ®¼äµÄ×ª»»
+ * 16è¿›åˆ¶å€¼ä¸String/Byteä¹‹é—´çš„è½¬æ¢
  * @author JerryLi
  * @email lijian@dzs.mobi
  * @data 2011-10-16
@@ -13,8 +13,8 @@ public class CHexConver
     private final static char[] mChars = "0123456789ABCDEF".toCharArray();
     private final static String mHexStr = "0123456789ABCDEF";
     /**
-     * ¼ì²é16½øÖÆ×Ö·û´®ÊÇ·ñÓĞĞ§
-     * @param sHex String 16½øÖÆ×Ö·û´®
+     * æ£€æŸ¥16è¿›åˆ¶å­—ç¬¦ä¸²æ˜¯å¦æœ‰æ•ˆ
+     * @param sHex String 16è¿›åˆ¶å­—ç¬¦ä¸²
      * @return boolean
      */
     public static boolean checkHexStr(String sHex){
@@ -32,9 +32,9 @@ public class CHexConver
     }
 
     /**
-     * ×Ö·û´®×ª»»³ÉÊ®Áù½øÖÆ×Ö·û´®
-     * @param str String ´ı×ª»»µÄASCII×Ö·û´®
-     * @return String Ã¿¸öByteÖ®¼ä¿Õ¸ñ·Ö¸ô£¬Èç: [61 6C 6B]
+     * å­—ç¬¦ä¸²è½¬æ¢æˆåå…­è¿›åˆ¶å­—ç¬¦ä¸²
+     * @param str String å¾…è½¬æ¢çš„ASCIIå­—ç¬¦ä¸²
+     * @return String æ¯ä¸ªByteä¹‹é—´ç©ºæ ¼åˆ†éš”ï¼Œå¦‚: [61 6C 6B]
      */
     public static String str2HexStr(String str){
         StringBuilder sb = new StringBuilder();
@@ -49,9 +49,9 @@ public class CHexConver
     }
 
     /**
-     * Ê®Áù½øÖÆ×Ö·û´®×ª»»³É ASCII×Ö·û´®
-     * @param str String Byte×Ö·û´®
-     * @return String ¶ÔÓ¦µÄ×Ö·û´®
+     * åå…­è¿›åˆ¶å­—ç¬¦ä¸²è½¬æ¢æˆ ASCIIå­—ç¬¦ä¸²
+     * @param str String Byteå­—ç¬¦ä¸²
+     * @return String å¯¹åº”çš„å­—ç¬¦ä¸²
      */
     public static String hexStr2Str(String hexStr){
         hexStr = hexStr.toString().trim().replace(" ", "").toUpperCase(Locale.US);
@@ -68,10 +68,10 @@ public class CHexConver
     }
 
     /**
-     * bytes×ª»»³ÉÊ®Áù½øÖÆ×Ö·û´®
-     * @param b byte[] byteÊı×é
-     * @param iLen int È¡Ç°NÎ»´¦Àí N=iLen
-     * @return String Ã¿¸öByteÖµÖ®¼ä¿Õ¸ñ·Ö¸ô
+     * bytesè½¬æ¢æˆåå…­è¿›åˆ¶å­—ç¬¦ä¸²
+     * @param b byte[] byteæ•°ç»„
+     * @param iLen int å–å‰Nä½å¤„ç† N=iLen
+     * @return String æ¯ä¸ªByteå€¼ä¹‹é—´ç©ºæ ¼åˆ†éš”
      */
     public static String byte2HexStr(byte[] b, int iLen){
         StringBuilder sb = new StringBuilder();
@@ -84,17 +84,17 @@ public class CHexConver
     }
 
     /**
-     * bytes×Ö·û´®×ª»»ÎªByteÖµ
-     * @param src String Byte×Ö·û´®£¬Ã¿¸öByteÖ®¼äÃ»ÓĞ·Ö¸ô·û(×Ö·û·¶Î§:0-9 A-F)
+     * byteså­—ç¬¦ä¸²è½¬æ¢ä¸ºByteå€¼
+     * @param src String Byteå­—ç¬¦ä¸²ï¼Œæ¯ä¸ªByteä¹‹é—´æ²¡æœ‰åˆ†éš”ç¬¦(å­—ç¬¦èŒƒå›´:0-9 A-F)
      * @return byte[]
      */
     public static byte[] hexStr2Bytes(String src){
-    	/*¶ÔÊäÈëÖµ½øĞĞ¹æ·¶»¯ÕûÀí*/
+    	/*å¯¹è¾“å…¥å€¼è¿›è¡Œè§„èŒƒåŒ–æ•´ç†*/
         src = src.trim().replace(" ", "").toUpperCase(Locale.US);
-        //´¦ÀíÖµ³õÊ¼»¯
+        //å¤„ç†å€¼åˆå§‹åŒ–
         int m=0,n=0;
-        int iLen=src.length()/2; //¼ÆËã³¤¶È
-        byte[] ret = new byte[iLen]; //·ÖÅä´æ´¢¿Õ¼ä
+        int iLen=src.length()/2; //è®¡ç®—é•¿åº¦
+        byte[] ret = new byte[iLen]; //åˆ†é…å­˜å‚¨ç©ºé—´
 
         for (int i = 0; i < iLen; i++){
             m=i*2+1;
@@ -105,9 +105,9 @@ public class CHexConver
     }
 
     /**
-     * StringµÄ×Ö·û´®×ª»»³ÉunicodeµÄString
-     * @param strText String È«½Ç×Ö·û´®
-     * @return String Ã¿¸öunicodeÖ®¼äÎŞ·Ö¸ô·û
+     * Stringçš„å­—ç¬¦ä¸²è½¬æ¢æˆunicodeçš„String
+     * @param strText String å…¨è§’å­—ç¬¦ä¸²
+     * @return String æ¯ä¸ªunicodeä¹‹é—´æ— åˆ†éš”ç¬¦
      * @throws Exception
      */
     public static String strToUnicode(String strText)
@@ -123,7 +123,7 @@ public class CHexConver
             strHex = Integer.toHexString(intAsc);
             if (intAsc > 128)
                 str.append("\\u");
-            else // µÍÎ»ÔÚÇ°Ãæ²¹00
+            else // ä½ä½åœ¨å‰é¢è¡¥00
                 str.append("\\u00");
             str.append(strHex);
         }
@@ -131,9 +131,9 @@ public class CHexConver
     }
 
     /**
-     * unicodeµÄString×ª»»³ÉStringµÄ×Ö·û´®
-     * @param hex String 16½øÖÆÖµ×Ö·û´® £¨Ò»¸öunicodeÎª2byte£©
-     * @return String È«½Ç×Ö·û´®
+     * unicodeçš„Stringè½¬æ¢æˆStringçš„å­—ç¬¦ä¸²
+     * @param hex String 16è¿›åˆ¶å€¼å­—ç¬¦ä¸² ï¼ˆä¸€ä¸ªunicodeä¸º2byteï¼‰
+     * @return String å…¨è§’å­—ç¬¦ä¸²
      * @see CHexConver.unicodeToString("\\u0068\\u0065\\u006c\\u006c\\u006f")
      */
     public static String unicodeToString(String hex){
@@ -142,9 +142,9 @@ public class CHexConver
         StringBuilder str = new StringBuilder();
         for (int i = 0; i < t; i++){
             String s = hex.substring(i * 6, (i + 1) * 6);
-            // ½«16½øÖÆµÄstring×ªÎªint
+            // å°†16è¿›åˆ¶çš„stringè½¬ä¸ºint
             iTmp = (Integer.valueOf(s.substring(2, 4), 16) << 8) | Integer.valueOf(s.substring(4), 16);
-            // ½«int×ª»»Îª×Ö·û
+            // å°†intè½¬æ¢ä¸ºå­—ç¬¦
             str.append(new String(Character.toChars(iTmp)));
         }
         return str.toString();

@@ -12,154 +12,292 @@ import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import com.hegj.usbhid.R;
+import com.hegj.usbhid.activity.IgxCallBack;
 
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
 
+import butterknife.Bind;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 
-public class MainActivity extends Activity {
+
+import android.content.ServiceConnection;
+import android.content.Intent;
+import android.content.ComponentName;
+import android.os.IBinder;
+import android.content.BroadcastReceiver;
+import android.content.IntentFilter;
+
+public class MainActivity extends Activity implements IgxCallBack {
 
     private static final String TAG = "MissileLauncherActivity";
 
-    private Button btsend; // ∑¢ÀÕ∞¥≈•
-    private EditText logtext;
-    private UsbManager manager; // USBπ‹¿Ì∆˜
-    private UsbDevice device; // ’“µΩµƒUSB…Ë±∏
-    private ListView lsv1; // œ‘ æUSB–≈œ¢µƒ
+    @Bind(R.id.sendcmd)
+    public Button btsend; // ÂèëÈÄÅÊåâÈíÆ
+
+    @Bind(R.id.edtlogText)
+    public EditText logtext;
+    @Bind(R.id.vendorIdText)
+    public TextView vendorIdText;
+    @Bind(R.id.productIdText)
+    public TextView productIdText;
+
+    private UsbManager manager; // USBÁÆ°ÁêÜÂô®
+    private UsbDevice device; // ÊâæÂà∞ÁöÑUSBËÆæÂ§á
+    private ListView lsv1; // ÊòæÁ§∫USB‰ø°ÊÅØÁöÑ
     private UsbInterface mInterface;
     private UsbDeviceConnection mDeviceConnection;
 
     private StringBuilder logstr = new StringBuilder("");
     private static final String NEWLINE = "\r\n";
+    private final int VendorID = 3608;
+    private final int ProductID = 4;
+    private UsbEndpoint epOut;
+    private UsbEndpoint epIn;
 
+
+
+    private gxHIDService theHIDService;
+    private gxHIDServiceReceiver theHIDServiceReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
-
-//        btsend = (Button) findViewById(R.id.btnSend);
-        logtext = (EditText) findViewById(R.id.edtlogText);
-//        btsend.setOnClickListener(btsendListener);
-//
-//        lsv1 = (ListView) findViewById(R.id.lsv1);
-
-        // ªÒ»°USB…Ë±∏
+        btsend.setEnabled(false);
+        logtext.setText(logstr);
+        // Ëé∑ÂèñUSBËÆæÂ§á
         manager = (UsbManager) getSystemService(Context.USB_SERVICE);
-        if (manager == null) {
+
+
+        theHIDServiceReceiver = new gxHIDServiceReceiver();
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(gxHIDService.NotificationIntent);
+        registerReceiver(theHIDServiceReceiver, intentFilter);
+
+        //ÁªëÂÆöService
+        Intent intent = new Intent(this, gxHIDService.class);//new Intent("com.gxHIDService.communication");
+        bindService(intent, conn, Context.BIND_AUTO_CREATE);
+
+
+        startService(intent);
+    }
+
+    ServiceConnection conn = new ServiceConnection() {
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+
+        }
+
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            //ËøîÂõû‰∏Ä‰∏™gxHIDServiceÂØπË±°
+            theHIDService = ((gxHIDService.gxHIDBinder)service).getService();
+            IgxCallBack callBack = (IgxCallBack)MainActivity.this;
+            theHIDService.setCallBack(callBack);
+            theHIDService.scanDevice();
+
+        }
+    };
+
+    @OnClick(R.id.btnClear)
+    public void doConn(){
+        try{
+            enumerateDevice();
+
+            findInterface();
+
+            openDevice();
+
+            assignEndpoint();
+        }catch (Exception e){
+            StackTraceElement[] st = e.getStackTrace();
+            for (StackTraceElement stackTraceElement : st) {
+                String exclass = stackTraceElement.getClassName();
+                String method = stackTraceElement.getMethodName();
+                logstr.append("#CLASS#"+exclass +"#METHOD#"+method + "#LINENUM#"+stackTraceElement.getLineNumber()
+                        + "------" + e.getClass().getName()+NEWLINE);
+            }
+        }
+
+    }
+
+    /**
+     * Êûö‰∏æËÆæÂ§á
+     */
+    private void enumerateDevice() throws Exception{
+        if (manager == null){
             logstr.append("usbManager is null \r\n");
             return;
-        } else {
-            logstr.append("usb device : " + manager.toString()+NEWLINE);
-            Log.i(TAG, "usb…Ë±∏£∫" + String.valueOf(manager.toString()));
         }
+
         HashMap<String, UsbDevice> deviceList = manager.getDeviceList();
-        Log.i(TAG, "usb…Ë±∏£∫" + String.valueOf(deviceList.size()));
-        Iterator<UsbDevice> deviceIterator = deviceList.values().iterator();
+        if (!deviceList.isEmpty()) { // deviceList‰∏ç‰∏∫Á©∫
+            for (UsbDevice d : deviceList.values()) {
+                // ËæìÂá∫ËÆæÂ§á‰ø°ÊÅØ
+                logstr.append("DeviceInfo: " + d.getVendorId() + " , " + d.getProductId() + NEWLINE);
 
-        while (deviceIterator.hasNext()) {
-            device = deviceIterator.next();
-            break;
-//            USBDeviceList.add(String.valueOf(device.getVendorId()));
-//            USBDeviceList.add(String.valueOf(device.getProductId()));
-
-            // ‘⁄’‚¿ÔÃÌº”¥¶¿Ì…Ë±∏µƒ¥˙¬Î
-//            if (device.getVendorId() == 6790 && device.getProductId() == 57360) {
-//                mUsbDevice = device;
-//                Log.i(TAG, "’“µΩ…Ë±∏");
-//            }
-        }
-
-        if(device != null){
-            logstr.append("find device :"+NEWLINE);
-            logstr.append("vendorId:"+device.getVendorId()+NEWLINE);
-            logstr.append("productId:"+device.getProductId()+NEWLINE);
-        }
-//        // ¥¥Ω®“ª∏ˆArrayAdapter
-//        lsv1.setAdapter(new ArrayAdapter<String>(this,
-//                android.R.layout.simple_list_item_1, USBDeviceList));
-        findIntfAndEpt();
-
-    }
-
-
-
-
-
-    // —∞’“Ω”ø⁄∫Õ∑÷≈‰Ω·µ„
-    private void findIntfAndEpt() {
-        if (device == null) {
-            logstr.append("device is null "+NEWLINE);
-            Log.i(TAG, "√ª”–’“µΩ…Ë±∏");
-            return;
-        }
-        for (int i = 0; i < device.getInterfaceCount();) {
-            // ªÒ»°…Ë±∏Ω”ø⁄£¨“ª∞„∂º «“ª∏ˆΩ”ø⁄£¨ƒ„ø…“‘¥Ú”°getInterfaceCount()∑Ω∑®≤Èø¥Ω”
-            // ø⁄µƒ∏ˆ ˝£¨‘⁄’‚∏ˆΩ”ø⁄…œ”–¡Ω∏ˆ∂Àµ„£¨OUT ∫Õ IN
-            UsbInterface intf = device.getInterface(i);
-            logstr.append(i+":"+intf+NEWLINE);
-            Log.d(TAG, i + " " + intf);
-            mInterface = intf;
-            break;
-        }
-
-        if (mInterface != null) {
-            UsbDeviceConnection connection = null;
-            // ≈–∂œ «∑Ò”–»®œﬁ
-            if (manager.hasPermission(device)) {
-                // ¥Úø™…Ë±∏£¨ªÒ»° UsbDeviceConnection ∂‘œÛ£¨¡¨Ω”…Ë±∏£¨”√”⁄∫Û√ÊµƒÕ®—∂
-                connection = manager.openDevice(device);
-                if (connection == null) {
-                    logstr.append("connection is null "+NEWLINE);
-                    return;
+                // Êûö‰∏æÂà∞ËÆæÂ§á
+                if (d.getVendorId() == VendorID  && d.getProductId() == ProductID) {
+                    device = d;
+                    vendorIdText.setText("vendorId : "+VendorID);
+                    productIdText.setText("productId : "+ProductID);
+                    logstr.append("find device success" + NEWLINE);
                 }
-                if (connection.claimInterface(mInterface, true)) {
-                    logstr.append("interface has been found 1" +NEWLINE);
-                    Log.i(TAG, "’“µΩΩ”ø⁄");
-                    mDeviceConnection = connection;
-                    // ”√UsbDeviceConnection ”Î UsbInterface Ω¯––∂Àµ„…Ë÷√∫ÕÕ®—∂
-                    getEndpoint(mDeviceConnection, mInterface);
-                } else {
-                    logstr.append("interface not found 1" +NEWLINE);
-                    connection.close();
-                }
-            } else {
-                logstr.append("no permission "+ NEWLINE);
-                Log.i(TAG, "√ª”–»®œﬁ");
             }
-        } else {
-            logstr.append("interface not found 2 "+NEWLINE);
-            Log.i(TAG, "√ª”–’“µΩΩ”ø⁄");
+        }else {
+            logstr.append("find nothing!"+NEWLINE);
         }
     }
 
-    private UsbEndpoint epOut;
-    private UsbEndpoint epIn;
+    /**
+     * ÊâæËÆæÂ§áÊé•Âè£
+     */
+    private void findInterface() throws Exception{
+        if (device != null) {
+            logstr.append("interfaceCounts : " + device.getInterfaceCount()+NEWLINE);
+            for (int i = 0; i < device.getInterfaceCount(); i++) {
+                // Ëé∑ÂèñËÆæÂ§áÊé•Âè£Ôºå‰∏ÄËà¨ÈÉΩÊòØ‰∏Ä‰∏™Êé•Âè£Ôºå‰Ω†ÂèØ‰ª•ÊâìÂç∞getInterfaceCount()ÊñπÊ≥ïÊü•ÁúãÊé•
+                // Âè£ÁöÑ‰∏™Êï∞ÔºåÂú®Ëøô‰∏™Êé•Âè£‰∏äÊúâ‰∏§‰∏™Á´ØÁÇπÔºåOUT Âíå IN
+                UsbInterface intf = device.getInterface(i);
+                logstr.append(i+":"+intf+NEWLINE);
+                mInterface = intf;
+                break;
+            }
+        }else {
+            logstr.append("device is null"+NEWLINE);
+        }
+    }
 
-    // ”√UsbDeviceConnection ”Î UsbInterface Ω¯––∂Àµ„…Ë÷√∫ÕÕ®—∂
-    private void getEndpoint(UsbDeviceConnection connection, UsbInterface intf) {
-        if (intf.getEndpoint(1) != null) {
-            epOut = intf.getEndpoint(1);
+    /**
+     * ÊâìÂºÄËÆæÂ§á
+     */
+    private void openDevice() throws Exception{
+        if (mInterface != null) {
+            UsbDeviceConnection conn = null;
+            // Âú®openÂâçÂà§Êñ≠ÊòØÂê¶ÊúâËøûÊé•ÊùÉÈôêÔºõÂØπ‰∫éËøûÊé•ÊùÉÈôêÂèØ‰ª•ÈùôÊÄÅÂàÜÈÖçÔºå‰πüÂèØ‰ª•Âä®ÊÄÅÂàÜÈÖçÊùÉÈôêÔºåÂèØ‰ª•Êü•ÈòÖÁõ∏ÂÖ≥ËµÑÊñô
+            if (manager.hasPermission(device)) {
+                conn = manager.openDevice(device);
+            }else{
+                logstr.append("no permission"+NEWLINE);
+            }
+
+            if (conn == null) {
+                logstr.append("connection is null "+NEWLINE);
+                return;
+            }
+
+            if (conn.claimInterface(mInterface, true)) {
+                mDeviceConnection = conn; // Âà∞Ê≠§‰Ω†ÁöÑandroidËÆæÂ§áÂ∑≤ÁªèËøû‰∏äHIDËÆæÂ§á
+                logstr.append("conn success!");
+            } else {
+                logstr.append("claimInterface is not success!");
+                conn.close();
+            }
+        }else{
+            logstr.append("interface is null!"+NEWLINE);
+        }
+    }
+
+    /**
+     * ÂàÜÈÖçÁ´ØÁÇπÔºåIN | OUTÔºåÂç≥ËæìÂÖ•ËæìÂá∫ÔºõÊ≠§Â§ÑÊàëÁõ¥Êé•Áî®1‰∏∫OUTÁ´ØÁÇπÔºå0‰∏∫INÔºåÂΩìÁÑ∂‰Ω†‰πüÂèØ‰ª•ÈÄöËøáÂà§Êñ≠
+     */
+    private void assignEndpoint() throws Exception{
+        if (mInterface.getEndpoint(1) != null) {
+            epOut = mInterface.getEndpoint(1);
             logstr.append("out point has been found"+NEWLINE);
         }else {
             logstr.append("out point not found " + NEWLINE);
         }
-        if (intf.getEndpoint(0) != null) {
-            epIn = intf.getEndpoint(0);
+        if (mInterface.getEndpoint(0) != null) {
+            epIn = mInterface.getEndpoint(0);
             logstr.append("in point has been found"+NEWLINE);
         }else {
             logstr.append("int point not found"+NEWLINE);
         }
     }
 
-    private byte[] Sendbytes; // ∑¢ÀÕ–≈œ¢◊÷Ω⁄
-    private byte[] Receiveytes; // Ω” ’–≈œ¢◊÷Ω⁄
+
+
+
+
+
+
+
+
+
+//    // ÂØªÊâæÊé•Âè£ÂíåÂàÜÈÖçÁªìÁÇπ
+//    private void findIntfAndEpt() {
+//        if (device == null) {
+//            logstr.append("device is null "+NEWLINE);
+//            Log.i(TAG, "Ê≤°ÊúâÊâæÂà∞ËÆæÂ§á");
+//            return;
+//        }
+//        for (int i = 0; i < device.getInterfaceCount();) {
+//            // Ëé∑ÂèñËÆæÂ§áÊé•Âè£Ôºå‰∏ÄËà¨ÈÉΩÊòØ‰∏Ä‰∏™Êé•Âè£Ôºå‰Ω†ÂèØ‰ª•ÊâìÂç∞getInterfaceCount()ÊñπÊ≥ïÊü•ÁúãÊé•
+//            // Âè£ÁöÑ‰∏™Êï∞ÔºåÂú®Ëøô‰∏™Êé•Âè£‰∏äÊúâ‰∏§‰∏™Á´ØÁÇπÔºåOUT Âíå IN
+//            UsbInterface intf = device.getInterface(i);
+//            logstr.append(i+":"+intf+NEWLINE);
+//            Log.d(TAG, i + " " + intf);
+//            mInterface = intf;
+//            break;
+//        }
+//
+//        if (mInterface != null) {
+//            UsbDeviceConnection connection = null;
+//            // Âà§Êñ≠ÊòØÂê¶ÊúâÊùÉÈôê
+//            if (manager.hasPermission(device)) {
+//                // ÊâìÂºÄËÆæÂ§áÔºåËé∑Âèñ UsbDeviceConnection ÂØπË±°ÔºåËøûÊé•ËÆæÂ§áÔºåÁî®‰∫éÂêéÈù¢ÁöÑÈÄöËÆØ
+//                connection = manager.openDevice(device);
+//                if (connection == null) {
+//                    logstr.append("connection is null "+NEWLINE);
+//                    return;
+//                }
+//                if (connection.claimInterface(mInterface, true)) {
+//                    logstr.append("interface has been found 1" +NEWLINE);
+//                    Log.i(TAG, "ÊâæÂà∞Êé•Âè£");
+//                    mDeviceConnection = connection;
+//                    // Áî®UsbDeviceConnection ‰∏é UsbInterface ËøõË°åÁ´ØÁÇπËÆæÁΩÆÂíåÈÄöËÆØ
+//                    getEndpoint(mDeviceConnection, mInterface);
+//                } else {
+//                    logstr.append("interface not found 1" +NEWLINE);
+//                    connection.close();
+//                }
+//            } else {
+//                logstr.append("no permission "+ NEWLINE);
+//                Log.i(TAG, "Ê≤°ÊúâÊùÉÈôê");
+//            }
+//        } else {
+//            logstr.append("interface not found 2 "+NEWLINE);
+//            Log.i(TAG, "Ê≤°ÊúâÊâæÂà∞Êé•Âè£");
+//        }
+//    }
+//
+//
+//
+//    // Áî®UsbDeviceConnection ‰∏é UsbInterface ËøõË°åÁ´ØÁÇπËÆæÁΩÆÂíåÈÄöËÆØ
+//    private void getEndpoint(UsbDeviceConnection connection, UsbInterface intf) {
+//        if (intf.getEndpoint(1) != null) {
+//            epOut = intf.getEndpoint(1);
+//            logstr.append("out point has been found"+NEWLINE);
+//        }else {
+//            logstr.append("out point not found " + NEWLINE);
+//        }
+//        if (intf.getEndpoint(0) != null) {
+//            epIn = intf.getEndpoint(0);
+//            logstr.append("in point has been found"+NEWLINE);
+//        }else {
+//            logstr.append("int point not found"+NEWLINE);
+//        }
+//    }
+
+    private byte[] Sendbytes; // ÂèëÈÄÅ‰ø°ÊÅØÂ≠óËäÇ
+    private byte[] Receiveytes; // Êé•Êî∂‰ø°ÊÅØÂ≠óËäÇ
 
 
     @OnClick(R.id.sendcmd)
@@ -178,27 +316,29 @@ public class MainActivity extends Activity {
             bt[1] = 77;
             bt[2] = 68;
             bt[3] = 73;
-            Sendbytes = Arrays.copyOf(bt, bt.length);
+//            Sendbytes = Arrays.copyOf(bt, bt.length);
 
-            // 1,∑¢ÀÕ◊º±∏√¸¡Ó
-            ret = mDeviceConnection.bulkTransfer(epOut, Sendbytes, Sendbytes.length, 5000);
-            logstr.append("command has been sent : " + ret +NEWLINE);
-            Log.i(TAG, "“—æ≠∑¢ÀÕ!");
-
-            // 2,Ω” ’∑¢ÀÕ≥…π¶–≈œ¢
-            Receiveytes = new byte[32];
-            ret = mDeviceConnection.bulkTransfer(epIn, Receiveytes, Receiveytes.length, 10000);
-            Log.i(TAG, "Ω” ’∑µªÿ÷µ:" + String.valueOf(ret));
-            logstr.append("get it :"+ret+NEWLINE);
-            if (ret != 32) {
-//            DisplayToast("Ω” ’∑µªÿ÷µ" + String.valueOf(ret));
-                return;
-            } else {
-                // ≤Èø¥∑µªÿ÷µ
-                logstr.append("end :"+String.valueOf(Receiveytes) +NEWLINE);
-//            DisplayToast(clsPublic.Bytes2HexString(Receiveytes));
-//            Log.i(TAG, clsPublic.Bytes2HexString(Receiveytes));
-            }
+            // 1,ÂèëÈÄÅÂáÜÂ§áÂëΩ‰ª§
+//            ret = mDeviceConnection.bulkTransfer(epOut, Sendbytes, Sendbytes.length, 5000);
+            ret = theHIDService.sendDataBulkTransfer(bt);
+            onLog("command has been sent : " + ret + NEWLINE);
+            Log.i(TAG, "Â∑≤ÁªèÂèëÈÄÅ!");
+//
+//            // 2,Êé•Êî∂ÂèëÈÄÅÊàêÂäü‰ø°ÊÅØ
+//            Receiveytes = new byte[64];
+//            ret = mDeviceConnection.bulkTransfer(epIn, Receiveytes, Receiveytes.length, 10000);
+//            Log.i(TAG, "Êé•Êî∂ËøîÂõûÂÄº:" + String.valueOf(ret));
+//            logstr.append("get it :"+ret+NEWLINE);
+//            if (ret < 0) {
+////            DisplayToast("Êé•Êî∂ËøîÂõûÂÄº" + String.valueOf(ret));
+////                return;
+//                logstr.append("receive nothing!"+NEWLINE);
+//            } else {
+//                // Êü•ÁúãËøîÂõûÂÄº
+//                logstr.append("RECEIVE :"+String.valueOf(Receiveytes) +NEWLINE);
+////            DisplayToast(clsPublic.Bytes2HexString(Receiveytes));
+////            Log.i(TAG, clsPublic.Bytes2HexString(Receiveytes));
+//            }
         }catch (Exception e){
             e.printStackTrace();
             StackTraceElement[] st = e.getStackTrace();
@@ -223,21 +363,21 @@ public class MainActivity extends Activity {
 //
 //            Sendbytes = Arrays.copyOf(bt, bt.length);
 //
-//            // 1,∑¢ÀÕ◊º±∏√¸¡Ó
+//            // 1,ÂèëÈÄÅÂáÜÂ§áÂëΩ‰ª§
 //            ret = mDeviceConnection.bulkTransfer(epOut, Sendbytes,
 //                    Sendbytes.length, 5000);
-//            Log.i(TAG, "“—æ≠∑¢ÀÕ!");
+//            Log.i(TAG, "Â∑≤ÁªèÂèëÈÄÅ!");
 //
-//            // 2,Ω” ’∑¢ÀÕ≥…π¶–≈œ¢
+//            // 2,Êé•Êî∂ÂèëÈÄÅÊàêÂäü‰ø°ÊÅØ
 //            Receiveytes = new byte[32];
 //            ret = mDeviceConnection.bulkTransfer(epIn, Receiveytes,
 //                    Receiveytes.length, 10000);
-//            Log.i(TAG, "Ω” ’∑µªÿ÷µ:" + String.valueOf(ret));
+//            Log.i(TAG, "Êé•Êî∂ËøîÂõûÂÄº:" + String.valueOf(ret));
 //            if (ret != 32) {
-//                DisplayToast("Ω” ’∑µªÿ÷µ" + String.valueOf(ret));
+//                DisplayToast("Êé•Êî∂ËøîÂõûÂÄº" + String.valueOf(ret));
 //                return;
 //            } else {
-//                // ≤Èø¥∑µªÿ÷µ
+//                // Êü•ÁúãËøîÂõûÂÄº
 //                DisplayToast(clsPublic.Bytes2HexString(Receiveytes));
 //                Log.i(TAG, clsPublic.Bytes2HexString(Receiveytes));
 //            }
@@ -246,9 +386,58 @@ public class MainActivity extends Activity {
 
 //    public void DisplayToast(CharSequence str) {
 //        Toast toast = Toast.makeText(this, str, Toast.LENGTH_LONG);
-//        // …Ë÷√Toastœ‘ æµƒŒª÷√
+//        // ËÆæÁΩÆToastÊòæÁ§∫ÁöÑ‰ΩçÁΩÆ
 //        toast.setGravity(Gravity.TOP, 0, 200);
-//        // œ‘ æToast
+//        // ÊòæÁ§∫Toast
 //        toast.show();
 //    }
+    private void onScanDevice(int theVendorID,  int theProductID){
+        if (VendorID == theVendorID && ProductID == theProductID) {
+            vendorIdText.setText("vendorId : " + VendorID);
+            productIdText.setText("productId : " + ProductID);
+            theHIDService.connectTo(theVendorID, theProductID);
+            btsend.setEnabled(true);
+        }
+    }
+
+    private void onReceiveData(byte data[]){
+
+        Log.i(TAG, "onReceiveData");
+        onLog("onReceiveData" + new String(data));
+    }
+    /**
+     * ÂπøÊí≠Êé•Êî∂Âô®
+     * @author len
+     *
+     */
+    public class gxHIDServiceReceiver extends BroadcastReceiver{
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            int type = intent.getIntExtra("type", 0);
+            switch (type) {
+                case gxHIDService.OnPlugged:
+                    break;
+                case gxHIDService.OnUnplugged:
+                    break;
+                case gxHIDService.ScanedDevice://Êâ´ÊèèÂà∞ËÆæÂ§á
+                    int theVendorID = intent.getIntExtra("VendorID", 0);
+                    int theProductID = intent.getIntExtra("ProductID", 0);
+                    onScanDevice(theVendorID, theProductID);
+                    break;
+                case gxHIDService.OnRecieveData:
+                    byte data[] = intent.getByteArrayExtra("data");
+                    onReceiveData(data);
+                    break;
+            }
+        }
+
+    }
+
+    @Override
+    public void  onLog(String log) {
+        logstr.append(log);
+        logtext.setText(logstr);
+    }
+
 }
