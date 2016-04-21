@@ -24,6 +24,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.app.PendingIntent;
 import android.view.InputDevice;
 import com.hegj.usbhid.activity.IgxCallBack;
 public class gxHIDService extends Service  {
@@ -41,6 +42,7 @@ public class gxHIDService extends Service  {
     private  int ProductID = 0;
     private  boolean device_null = true;
     private  final String ACTION_USB_PERMISSION="com.gxHIDService.USB_PERMISSION";
+    private PendingIntent mPermissionIntent;
 
 
     private static String tempLog = "";
@@ -92,7 +94,7 @@ public class gxHIDService extends Service  {
 
 
         mUsbManager=(UsbManager)getSystemService(USB_SERVICE);
-
+        mPermissionIntent = PendingIntent.getBroadcast(this, 0, new Intent(ACTION_USB_PERMISSION), 0);
         readThread=new ReadThread();
         readThread.start();
     }
@@ -103,7 +105,17 @@ public class gxHIDService extends Service  {
         mUsbManager=(UsbManager)getSystemService(USB_SERVICE);
         HashMap<String, UsbDevice> map=   mUsbManager.getDeviceList();
         for (UsbDevice device : map.values()){
-            outputLog("找到设备,VendorID:" + device.getVendorId() + "ProductID:" + device.getProductId());
+            outputLog("找到设备,VendorID:" + device.getVendorId() + "  ProductID: " + device.getProductId());
+
+
+
+
+            if (mUsbManager.hasPermission(device)) {
+            }else{
+                outputLog("no permission");
+                mUsbManager.requestPermission(device, mPermissionIntent);
+            }
+
             //发送广播
             intent.putExtra("type", ScanedDevice);
             intent.putExtra("VendorID", device.getVendorId());
@@ -164,8 +176,14 @@ public class gxHIDService extends Service  {
             outputLog("mUsbDevice==null");
             return false;
         }
-        closeDevice();
-        mUsbConnection=mUsbManager.openDevice(mUsbDevice);
+//        closeDevice();
+        // 在open前判断是否有连接权限；对于连接权限可以静态分配，也可以动态分配权限，可以查阅相关资料
+        if (mUsbManager.hasPermission(mUsbDevice)) {
+            mUsbConnection=mUsbManager.openDevice(mUsbDevice);
+        }else{
+            outputLog("no permission");
+            mUsbManager.requestPermission(mUsbDevice, mPermissionIntent);
+        }
         outputLog("打开连接：" + mUsbConnection);
         if(mUsbConnection!=null)
             return mUsbConnection.claimInterface(mUsbInterface, true);
@@ -227,9 +245,9 @@ public class gxHIDService extends Service  {
                 intent.putExtra("type", OnRecieveData);
                 intent.putExtra("data", buffer);
                 sendBroadcast(intent);
-                for (int i = 0; i < buffer.length; i++) {
-                    outputLog("onDataReceived-->这个数据是：" + buffer[i]);
-                }
+//                for (int i = 0; i < buffer.length; i++) {
+//                    outputLog("onDataReceived-->这个数据是：" + buffer[i]);
+//                }
             }
         });
     }
@@ -242,6 +260,7 @@ public class gxHIDService extends Service  {
             mUsbDevice=null;
         mUsbDevice = device;
         //获取设备接口，一般都是一个接口，可以打印getInterfaceCount()查看接口个数，在这个接口上有两个端点，OUT和IN
+        outputLog("接口个数:" + mUsbDevice.getInterfaceCount());
         mUsbInterface=mUsbDevice.getInterface(0);
         setEndpoint(mUsbInterface);
     }
@@ -333,11 +352,11 @@ public class gxHIDService extends Service  {
      */
     private byte [] receiveBulkTransferData(){
         mUsbInterface=  mUsbDevice.getInterface(0);
-        setEndpoint(mUsbInterface);
+//        setEndpoint(mUsbInterface);
         byte [] buffer=new byte[epIn.getMaxPacketSize()];
         //sendDataUsbRequest();
         int n=  mUsbConnection.bulkTransfer(epIn, buffer, epIn.getMaxPacketSize(), 1000);
-        outputLog("receiveBulkTransferData:" + buffer + "------>n="+n);
+//        outputLog("receiveBulkTransferData:" + buffer + "------>n="+n);
         if(n>0)
             return buffer;
         return null;

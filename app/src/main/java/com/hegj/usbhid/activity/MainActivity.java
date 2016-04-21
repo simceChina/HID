@@ -36,6 +36,9 @@ public class MainActivity extends Activity implements IgxCallBack {
 
     private static final String TAG = "MissileLauncherActivity";
 
+    @Bind(R.id.btnClear)
+    public Button btConnect; // connect按钮
+
     @Bind(R.id.sendcmd)
     public Button btsend; // 发送按钮
 
@@ -69,6 +72,7 @@ public class MainActivity extends Activity implements IgxCallBack {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
+        btConnect.setEnabled(false);
         btsend.setEnabled(false);
         logtext.setText(logstr);
         // 获取USB设备
@@ -96,11 +100,21 @@ public class MainActivity extends Activity implements IgxCallBack {
 
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
-            //返回一个gxHIDService对象
-            theHIDService = ((gxHIDService.gxHIDBinder)service).getService();
-            IgxCallBack callBack = (IgxCallBack)MainActivity.this;
-            theHIDService.setCallBack(callBack);
-            theHIDService.scanDevice();
+            try {
+                //返回一个gxHIDService对象
+                theHIDService = ((gxHIDService.gxHIDBinder) service).getService();
+                IgxCallBack callBack = (IgxCallBack) MainActivity.this;
+                theHIDService.setCallBack(callBack);
+                theHIDService.scanDevice();
+            }catch (Exception e) {
+                StackTraceElement[] st = e.getStackTrace();
+                for (StackTraceElement stackTraceElement : st) {
+                    String exclass = stackTraceElement.getClassName();
+                    String method = stackTraceElement.getMethodName();
+                    onLog("#CLASS#"+exclass +"#METHOD#"+method + "#LINENUM#"+stackTraceElement.getLineNumber()
+                            + "------" + e.getClass().getName()+NEWLINE);
+                }
+            }
 
         }
     };
@@ -108,19 +122,20 @@ public class MainActivity extends Activity implements IgxCallBack {
     @OnClick(R.id.btnClear)
     public void doConn(){
         try{
-            enumerateDevice();
-
-            findInterface();
-
-            openDevice();
-
-            assignEndpoint();
+            theHIDService.connectTo(VendorID, ProductID);
+//            enumerateDevice();
+//
+//            findInterface();
+//
+//            openDevice();
+//
+//            assignEndpoint();
         }catch (Exception e){
             StackTraceElement[] st = e.getStackTrace();
             for (StackTraceElement stackTraceElement : st) {
                 String exclass = stackTraceElement.getClassName();
                 String method = stackTraceElement.getMethodName();
-                logstr.append("#CLASS#"+exclass +"#METHOD#"+method + "#LINENUM#"+stackTraceElement.getLineNumber()
+                onLog("#CLASS#"+exclass +"#METHOD#"+method + "#LINENUM#"+stackTraceElement.getLineNumber()
                         + "------" + e.getClass().getName()+NEWLINE);
             }
         }
@@ -130,97 +145,97 @@ public class MainActivity extends Activity implements IgxCallBack {
     /**
      * 枚举设备
      */
-    private void enumerateDevice() throws Exception{
-        if (manager == null){
-            logstr.append("usbManager is null \r\n");
-            return;
-        }
-
-        HashMap<String, UsbDevice> deviceList = manager.getDeviceList();
-        if (!deviceList.isEmpty()) { // deviceList不为空
-            for (UsbDevice d : deviceList.values()) {
-                // 输出设备信息
-                logstr.append("DeviceInfo: " + d.getVendorId() + " , " + d.getProductId() + NEWLINE);
-
-                // 枚举到设备
-                if (d.getVendorId() == VendorID  && d.getProductId() == ProductID) {
-                    device = d;
-                    vendorIdText.setText("vendorId : "+VendorID);
-                    productIdText.setText("productId : "+ProductID);
-                    logstr.append("find device success" + NEWLINE);
-                }
-            }
-        }else {
-            logstr.append("find nothing!"+NEWLINE);
-        }
-    }
+//    private void enumerateDevice() throws Exception{
+//        if (manager == null){
+//            logstr.append("usbManager is null \r\n");
+//            return;
+//        }
+//
+//        HashMap<String, UsbDevice> deviceList = manager.getDeviceList();
+//        if (!deviceList.isEmpty()) { // deviceList不为空
+//            for (UsbDevice d : deviceList.values()) {
+//                // 输出设备信息
+//                logstr.append("DeviceInfo: " + d.getVendorId() + " , " + d.getProductId() + NEWLINE);
+//
+//                // 枚举到设备
+//                if (d.getVendorId() == VendorID  && d.getProductId() == ProductID) {
+//                    device = d;
+//                    vendorIdText.setText("vendorId : "+VendorID);
+//                    productIdText.setText("productId : "+ProductID);
+//                    logstr.append("find device success" + NEWLINE);
+//                }
+//            }
+//        }else {
+//            logstr.append("find nothing!"+NEWLINE);
+//        }
+//    }
 
     /**
      * 找设备接口
      */
-    private void findInterface() throws Exception{
-        if (device != null) {
-            logstr.append("interfaceCounts : " + device.getInterfaceCount()+NEWLINE);
-            for (int i = 0; i < device.getInterfaceCount(); i++) {
-                // 获取设备接口，一般都是一个接口，你可以打印getInterfaceCount()方法查看接
-                // 口的个数，在这个接口上有两个端点，OUT 和 IN
-                UsbInterface intf = device.getInterface(i);
-                logstr.append(i+":"+intf+NEWLINE);
-                mInterface = intf;
-                break;
-            }
-        }else {
-            logstr.append("device is null"+NEWLINE);
-        }
-    }
+//    private void findInterface() throws Exception{
+//        if (device != null) {
+//            logstr.append("interfaceCounts : " + device.getInterfaceCount()+NEWLINE);
+//            for (int i = 0; i < device.getInterfaceCount(); i++) {
+//                // 获取设备接口，一般都是一个接口，你可以打印getInterfaceCount()方法查看接
+//                // 口的个数，在这个接口上有两个端点，OUT 和 IN
+//                UsbInterface intf = device.getInterface(i);
+//                logstr.append(i+":"+intf+NEWLINE);
+//                mInterface = intf;
+//                break;
+//            }
+//        }else {
+//            logstr.append("device is null"+NEWLINE);
+//        }
+//    }
 
     /**
      * 打开设备
      */
-    private void openDevice() throws Exception{
-        if (mInterface != null) {
-            UsbDeviceConnection conn = null;
-            // 在open前判断是否有连接权限；对于连接权限可以静态分配，也可以动态分配权限，可以查阅相关资料
-            if (manager.hasPermission(device)) {
-                conn = manager.openDevice(device);
-            }else{
-                logstr.append("no permission"+NEWLINE);
-            }
-
-            if (conn == null) {
-                logstr.append("connection is null "+NEWLINE);
-                return;
-            }
-
-            if (conn.claimInterface(mInterface, true)) {
-                mDeviceConnection = conn; // 到此你的android设备已经连上HID设备
-                logstr.append("conn success!");
-            } else {
-                logstr.append("claimInterface is not success!");
-                conn.close();
-            }
-        }else{
-            logstr.append("interface is null!"+NEWLINE);
-        }
-    }
+//    private void openDevice() throws Exception{
+//        if (mInterface != null) {
+//            UsbDeviceConnection conn = null;
+//            // 在open前判断是否有连接权限；对于连接权限可以静态分配，也可以动态分配权限，可以查阅相关资料
+//            if (manager.hasPermission(device)) {
+//                conn = manager.openDevice(device);
+//            }else{
+//                logstr.append("no permission"+NEWLINE);
+//            }
+//
+//            if (conn == null) {
+//                logstr.append("connection is null "+NEWLINE);
+//                return;
+//            }
+//
+//            if (conn.claimInterface(mInterface, true)) {
+//                mDeviceConnection = conn; // 到此你的android设备已经连上HID设备
+//                logstr.append("conn success!");
+//            } else {
+//                logstr.append("claimInterface is not success!");
+//                conn.close();
+//            }
+//        }else{
+//            logstr.append("interface is null!"+NEWLINE);
+//        }
+//    }
 
     /**
      * 分配端点，IN | OUT，即输入输出；此处我直接用1为OUT端点，0为IN，当然你也可以通过判断
      */
-    private void assignEndpoint() throws Exception{
-        if (mInterface.getEndpoint(1) != null) {
-            epOut = mInterface.getEndpoint(1);
-            logstr.append("out point has been found"+NEWLINE);
-        }else {
-            logstr.append("out point not found " + NEWLINE);
-        }
-        if (mInterface.getEndpoint(0) != null) {
-            epIn = mInterface.getEndpoint(0);
-            logstr.append("in point has been found"+NEWLINE);
-        }else {
-            logstr.append("int point not found"+NEWLINE);
-        }
-    }
+//    private void assignEndpoint() throws Exception{
+//        if (mInterface.getEndpoint(1) != null) {
+//            epOut = mInterface.getEndpoint(1);
+//            logstr.append("out point has been found"+NEWLINE);
+//        }else {
+//            logstr.append("out point not found " + NEWLINE);
+//        }
+//        if (mInterface.getEndpoint(0) != null) {
+//            epIn = mInterface.getEndpoint(0);
+//            logstr.append("in point has been found"+NEWLINE);
+//        }else {
+//            logstr.append("int point not found"+NEWLINE);
+//        }
+//    }
 
 
 
@@ -395,7 +410,8 @@ public class MainActivity extends Activity implements IgxCallBack {
         if (VendorID == theVendorID && ProductID == theProductID) {
             vendorIdText.setText("vendorId : " + VendorID);
             productIdText.setText("productId : " + ProductID);
-            theHIDService.connectTo(theVendorID, theProductID);
+//            theHIDService.connectTo(theVendorID, theProductID);
+            btConnect.setEnabled(true);
             btsend.setEnabled(true);
         }
     }
@@ -403,7 +419,12 @@ public class MainActivity extends Activity implements IgxCallBack {
     private void onReceiveData(byte data[]){
 
         Log.i(TAG, "onReceiveData");
-        onLog("onReceiveData" + new String(data));
+        onLog("onReceiveData");
+
+        for (int i = 0; i < data.length; i++) {
+            onLog("" + data[i]);
+        }
+        onLog("/r/n");
     }
     /**
      * 广播接收器

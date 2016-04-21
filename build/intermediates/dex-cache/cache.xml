@@ -2,13 +2,6 @@
 <items version="2" >
 
     <item
-        jar="C:\Users\windgxhuang\AppData\Local\Android\sdk\extras\android\m2repository\com\android\support\support-annotations\23.0.1\support-annotations-23.0.1.jar"
-        jumboMode="false"
-        revision="22.0.1"
-        sha1="1fce89a6428c51467090d7f424e4c9c3dbd55f7e">
-        <dex dex="E:\HID\app\build\intermediates\pre-dexed\release\support-annotations-23.0.1-076aabfe2ac4ce5a57fe4b487445f8fd276f6406.jar" />
-    </item>
-    <item
         jar="C:\Users\windgxhuang\.gradle\caches\modules-2\files-2.1\com.jakewharton\butterknife\7.0.1\d5d13ea991eab0252e3710e5df3d6a9d4b21d461\butterknife-7.0.1.jar"
         jumboMode="false"
         revision="22.0.1"
@@ -16,11 +9,18 @@
         <dex dex="E:\HID\app\build\intermediates\pre-dexed\release\butterknife-7.0.1-4d84cfc8a9fb8d420bc21fc80eed47560521160b.jar" />
     </item>
     <item
-        jar="E:\HID\app\build\intermediates\exploded-aar\com.android.support\support-v4\23.0.1\jars\classes.jar"
+        jar="C:\Users\windgxhuang\AppData\Local\Android\sdk\extras\android\m2repository\com\android\support\support-annotations\23.0.1\support-annotations-23.0.1.jar"
         jumboMode="false"
         revision="22.0.1"
-        sha1="c31e21b53ff2f74664e498248d01453a32e32d48">
-        <dex dex="E:\HID\app\build\intermediates\pre-dexed\release\classes-4683fb7a31c18f93d386c3e783e1cc645fb55103.jar" />
+        sha1="1fce89a6428c51467090d7f424e4c9c3dbd55f7e">
+        <dex dex="E:\HID\app\build\intermediates\pre-dexed\release\support-annotations-23.0.1-076aabfe2ac4ce5a57fe4b487445f8fd276f6406.jar" />
+    </item>
+    <item
+        jar="E:\HID\app\build\intermediates\exploded-aar\com.android.support\support-v4\23.0.1\jars\libs\internal_impl-23.0.1.jar"
+        jumboMode="false"
+        revision="22.0.1"
+        sha1="aa92916125166649d8ad4ba3940c3dd7515596d3">
+        <dex dex="E:\HID\app\build\intermediates\pre-dexed\release\internal_impl-23.0.1-54348d3849806e0180cd7c71b276d0ce6f577a24.jar" />
     </item>
     <item
         jar="E:\HID\app\build\intermediates\exploded-aar\com.android.support\appcompat-v7\23.0.1\jars\classes.jar"
@@ -30,11 +30,11 @@
         <dex dex="E:\HID\app\build\intermediates\pre-dexed\release\classes-8d8cd9b5c24f5ca06bee37deb18b905dba1bb63a.jar" />
     </item>
     <item
-        jar="E:\HID\app\build\intermediates\exploded-aar\com.android.support\support-v4\23.0.1\jars\libs\internal_impl-23.0.1.jar"
+        jar="E:\HID\app\build\intermediates\exploded-aar\com.android.support\support-v4\23.0.1\jars\classes.jar"
         jumboMode="false"
         revision="22.0.1"
-        sha1="aa92916125166649d8ad4ba3940c3dd7515596d3">
-        <dex dex="E:\HID\app\build\intermediates\pre-dexed\release\internal_impl-23.0.1-54348d3849806e0180cd7c71b276d0ce6f577a24.jar" />
+        sha1="c31e21b53ff2f74664e498248d01453a32e32d48">
+        <dex dex="E:\HID\app\build\intermediates\pre-dexed\release\classes-4683fb7a31c18f93d386c3e783e1cc645fb55103.jar" />
     </item>
 
 </items>
